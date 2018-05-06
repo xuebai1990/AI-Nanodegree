@@ -16,8 +16,11 @@ class ActionLayer(BaseActionLayer):
         layers.ActionNode
         """
         # TODO: implement this function
-        raise NotImplementedError
-
+        for A in actionA.effects:
+            for B in actionB.effects:
+                if A == ~B:
+                    return True
+        return False
 
     def _interference(self, actionA, actionB):
         """ Return True if the effects of either action negate the preconditions of the other 
@@ -27,7 +30,15 @@ class ActionLayer(BaseActionLayer):
         layers.ActionNode
         """
         # TODO: implement this function
-        raise NotImplementedError
+        for A in actionA.preconditions:
+            for B in actionB.effects:
+                if A == ~B:
+                    return True
+        for A in actionA.effects:
+            for B in actionB.preconditions:
+                if A == ~B:
+                    return True
+        return False
 
     def _competing_needs(self, actionA, actionB):
         """ Return True if the preconditions of the actions are all pairwise mutex in the parent layer 
@@ -38,7 +49,10 @@ class ActionLayer(BaseActionLayer):
         layers.BaseLayer.parent_layer
         """
         # TODO: implement this function
-        raise NotImplementedError
+        if any(self.parent_layer.is_mutex(A, B) for A in actionA.preconditions for B in actionB.preconditions):
+            return True
+        else:
+            return False       
 
 
 class LiteralLayer(BaseLiteralLayer):
@@ -51,12 +65,19 @@ class LiteralLayer(BaseLiteralLayer):
         layers.BaseLayer.parent_layer
         """
         # TODO: implement this function
-        raise NotImplementedError
+        if all(self.parent_layer.is_mutex(A, B) for A in self.parents[literalA] \
+               for B in self.parents[literalB]):
+            return True
+        else:
+            return False      
 
     def _negation(self, literalA, literalB):
         """ Return True if two literals are negations of each other """
         # TODO: implement this function
-        raise NotImplementedError
+        if literalA == ~literalB:
+            return True
+        else:
+            return False
 
 
 class PlanningGraph:
@@ -115,7 +136,17 @@ class PlanningGraph:
         Russell-Norvig 10.3.1 (3rd Edition)
         """
         # TODO: implement this function
-        raise NotImplementedError
+        hl_sum = 0
+        count = 0
+        tar = self.goal
+        while tar:
+            for literal in iter(self.literal_layers[-1]):
+                if literal in tar:
+                    hl_sum += count
+                    tar.remove(literal)
+            self._extend()
+            count += 1
+        return hl_sum
 
     def h_maxlevel(self):
         """ Calculate the max level heuristic for the planning graph
@@ -140,7 +171,17 @@ class PlanningGraph:
         WARNING: you should expect long runtimes using this heuristic with A*
         """
         # TODO: implement maxlevel heuristic
-        raise NotImplementedError
+        h_max = 0
+        count = 0
+        tar = self.goal
+        while tar:
+            for literal in iter(self.literal_layers[-1]):
+                if literal in tar:
+                    h_max = max(h_max, count)
+                    tar.remove(literal)
+            self._extend()
+            count += 1
+        return h_max
 
     def h_setlevel(self):
         """ Calculate the set level heuristic for the planning graph
@@ -160,7 +201,27 @@ class PlanningGraph:
         WARNING: you should expect long runtimes using this heuristic on complex problems
         """
         # TODO: implement setlevel heuristic
-        raise NotImplementedError
+        count = 0
+        tar = list(self.goal)
+        while True:
+            flag = True
+            for literal in tar:
+                if not literal in self.literal_layers[-1]:
+                    flag = False
+                    break
+            if not flag: 
+                self._extend()
+                count += 1
+                continue   
+            for i in range(len(tar)):
+                for j in range(i+1, len(tar)):
+                    if self.literal_layers[-1].is_mutex(tar[i], tar[j]):
+                        flag = False
+                        break
+                if not flag: break
+            if flag: return count
+            self._extend()
+            count += 1
 
     ##############################################################################
     #                     DO NOT MODIFY CODE BELOW THIS LINE                     #
