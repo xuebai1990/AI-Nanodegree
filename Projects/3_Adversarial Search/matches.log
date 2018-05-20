@@ -1,0 +1,10 @@
+INFO:root:Search Configuration:
+Opponent: SELF
+Rounds: 1
+Fair Matches: False
+Time Limit: 150
+Processes: 1
+INFO:isolation:Initial game state: Isolation(board=41523161203939122082683632224299007, ply_count=0, locs=(None, None))
+First agent: Agent(agent_class=<class 'my_custom_player.CustomPlayer'>, name='Custom TestAgent')
+Second agent: Agent(agent_class=<class 'my_custom_player.CustomPlayer'>, name='Custom Agent')
+
